@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
-
+import { GoogleSignInButton } from "./google-sign";
 export async function AuthButton() {
   const supabase = await createClient();
 
@@ -24,6 +24,7 @@ export async function AuthButton() {
       <Button asChild size="sm" variant={"default"}>
         <Link href="/auth/sign-up">Sign up</Link>
       </Button>
+      <GoogleSignInButton />
     </div>
   );
 }
