@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
 import { GoogleSignInButton } from "./google-sign";
+import { GithubSignInButton } from "./github-sign";
 export async function AuthButton() {
   const supabase = await createClient();
 
@@ -17,14 +18,15 @@ export async function AuthButton() {
       <LogoutButton />
     </div>
   ) : (
-    <div className="flex gap-2">
+    <div className="grid gap-2 w-0 ">
       <Button asChild size="sm" variant={"outline"}>
-        <Link href="/auth/login">Sign in</Link>
+        <Link href="/auth/login">Sign in with email</Link>
       </Button>
-      <Button asChild size="sm" variant={"default"}>
-        <Link href="/auth/sign-up">Sign up</Link>
+      <Button asChild size="sm" variant={"outline"}>
+        <Link href="/auth/sign-up">Sign up with email</Link>
       </Button>
       <GoogleSignInButton />
+      <GithubSignInButton />
     </div>
   );
 }

@@ -28,7 +28,7 @@ body {
     0 0 32px rgb(255, 255, 255, 0.2);
 }
 
-.text-glow-white {
+.text-glow-accent {
   text-shadow:
     0 0 6px rgb(96, 209, 164, 0.1),
     0 0 18px rgb(96, 209, 164, 0.2),
