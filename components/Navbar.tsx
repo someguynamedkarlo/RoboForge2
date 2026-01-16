@@ -11,7 +11,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/"
-                className="block block my-4 mx-20 text-white text-2xl hover:text-accent  text-glow-white  hover:text-accent
+                className="block  my-4 mx-20 text-white text-2xl  text-glow-white  hover:text-accent
                 
 "
                 aria-current="page"
@@ -22,7 +22,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/my-projects"
-                className="block my-4 mx-20 text-white text-white text-2xl hover:text-accent text-glow-white hover:text-accent"
+                className="block my-4 mx-20 text-white text-2xl text-glow-white hover:text-accent"
               >
                 My projects
               </Link>
@@ -30,7 +30,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/fundraising"
-                className="block my-4 mx-20 text-white text-white text-2xl hover:text-accent  text-glow-white  hover:text-accent"
+                className="block my-4 mx-20 text-white  text-2xl   text-glow-white  hover:text-accent"
               >
                 Fundraising
               </Link>
