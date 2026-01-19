@@ -37,7 +37,7 @@ export default function Navbar() {
               </Link>
             </li>
             <li>
-              <Profile className="my-4 mx-20" />
+              <Profile />
             </li>
           </ul>
         </div>
