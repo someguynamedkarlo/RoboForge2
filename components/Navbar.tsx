@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Profile } from "./profile";
 export default function Navbar() {
   return (
     <nav className=" fixed w-full z-20 top-0 start-0 b">
@@ -34,6 +35,9 @@ export default function Navbar() {
               >
                 Fundraising
               </Link>
+            </li>
+            <li>
+              <Profile className="my-4 mx-20" />
             </li>
           </ul>
         </div>

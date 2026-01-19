@@ -7,21 +7,19 @@ import { Suspense } from "react";
 
 async function UserDetails() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
+  const { data, error } = await supabase.auth.getUser();
 
-  if (error || !data?.claims) {
-    redirect("/auth/login");
+  if (error || !data) {
+    redirect("/");
   }
 
-  return JSON.stringify(data.claims, null, 2);
+  return JSON.stringify(data, null, 2);
 }
 
 export default function ProtectedPage() {
   return (
     <>
       <Navbar />
-
-      <UserDetails />
     </>
   );
 }
