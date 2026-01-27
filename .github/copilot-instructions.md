@@ -4,81 +4,45 @@
 
 Next.js 16 app with Supabase authentication (email/password + OAuth via Google/GitHub). Deployed on Vercel with automatic CI/CD.
 
-## Architecture
+# RoboForge - Copilot Instructions
 
-### Authentication Flow
+## Overview
+- Next.js 16 + Tailwind app with Supabase auth (OAuth Google/GitHub). Deployed on Vercel.
+- No tests yet; lint/build via npm scripts. README is placeholder.
 
-- **Supabase clients**: Three separate clients in `lib/supabase/`:
-  - `server.ts` - Server Components (uses `cookies()`)
-  - `client.ts` - Client Components (browser client)
-  - `proxy.ts` - Middleware session refresh
-- **OAuth callback**: `app/auth/confirm/route.ts` handles both OAuth code exchange AND email OTP verification
-- **Session storage**: JWT tokens stored in cookies, auto-refreshed by middleware
+## Auth flow
+- Supabase clients live in `lib/supabase/`: `server.ts` for Server Components (uses `cookies()`), `client.ts` for Client Components, `proxy.ts` for middleware refresh.
+- OAuth callback + email OTP handled in `app/auth/confirm/route.ts` (`GET` only). It exchanges `code` for a session or verifies `token_hash`/`type`, then redirects (defaults to `/home`).
+- Middleware entrypoint `proxy.ts` calls `updateSession` (lib/supabase/proxy) to refresh JWT cookies and redirect unauthenticated users; current redirect target is `/auth/login` (route missing right now—adjust if you add a login page).
+- Server-side checks typically use `supabase.auth.getUser()`; client-side uses `createClient()` from `lib/supabase/client`.
 
-### Key Patterns
+## Routing / pages
+- `app/layout.tsx`: sets metadata, Geist font, ThemeProvider, and `suppressHydrationWarning` on html/body.
+- `app/page.tsx`: landing. Creates server client, redirects to `/home` if authenticated, otherwise renders `AuthButton` (OAuth buttons) only.
+- `app/home/page.tsx`: currently just renders `Navbar`; was intended as protected area. `UserDetails` helper redirects to `/` on auth failure but is unused.
+- `app/auth/error/page.tsx`: simple error message.
 
-```typescript
-// Server Component - check auth
-const supabase = await createClient(); // from lib/supabase/server
-const { data } = await supabase.auth.getClaims(); // Fast JWT decode
-// OR
-const {
-  data: { user },
-} = await supabase.auth.getUser(); // Full user data
+## Components
+- `components/google-sign.tsx` and `components/github-sign.tsx`: client OAuth triggers with `redirectTo: ${window.location.origin}/auth/confirm`. Use `startTransition` to avoid blocking UI.
+- `components/logout-button.tsx`: client sign-out then `router.push("/")`.
+- `components/Navbar.tsx` + `components/profile.tsx`: server components showing nav links and avatar + logout.
+- `components/ui/button.tsx`: shadcn button variant utility using `cn` from `lib/utils`.
 
-// Client Component - must be "use client"
-const supabase = createClient(); // from lib/supabase/client
-```
-
-### Route Protection
-
-- Middleware in `proxy.ts` + `lib/supabase/proxy.ts` redirects unauthenticated users to `/auth/login`
-- Exceptions: `/`, `/auth/*`, `/login` paths are public
-- Protected pages should still verify auth and redirect if `getClaims()` fails
-
-## File Structure
-
-```
-app/
-  auth/confirm/route.ts  # OAuth + OTP verification endpoint
-  auth/login/page.tsx    # Login page
-  home/page.tsx          # Post-login landing (protected)
-  protected/             # Legacy protected route
-components/
-  google-sign.tsx        # OAuth buttons (client components)
-  github-sign.tsx
-  login-form.tsx         # Email/password form
-  Navbar.tsx             # Navigation
-  ui/                    # shadcn/ui components
-lib/supabase/            # Supabase client factories
-```
+## Middleware details
+- `lib/supabase/proxy.ts` creates a server client per request (never global). Uses `hasEnvVars` guard to no-op when envs missing. After `getClaims`, redirects to `/auth/login` unless path is `/`, `/login`, or `/auth/*`. Copy cookies from `supabaseResponse` if you craft a custom response.
 
 ## Commands
+- `npm run dev` (dev server), `npm run build`, `npm run lint`.
 
-```bash
-npm run dev    # Start dev server (localhost:3000)
-npm run build  # Production build
-npm run lint   # ESLint
-```
+## Conventions / pitfalls
+- Always create Supabase clients per request/render (Fluid compute safe).
+- Keep OAuth `redirectTo` relative to `window.location.origin` for both localhost and Vercel.
+- Avoid `export const dynamic` in route handlers (Turbopack issue noted). Route handlers stay static.
+- Ensure `suppressHydrationWarning` remains on html/body to dodge extension noise.
+- Env vars required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (set in Vercel and local).
 
-## Important Conventions
+## Gaps to know
+- Middleware redirects to `/auth/login`, but that route/page does not exist; landing page handles sign-in today. Update matcher/redirect if you add a login page.
+- README is empty; rely on this file for project guidance for now.
 
-- **Never use `export const dynamic`** in route handlers - causes Turbopack build errors
-- **Always create fresh Supabase client** per request (no global instances)
-- **OAuth redirect**: Use `window.location.origin` for `redirectTo` to support both localhost and Vercel
-- **Add `suppressHydrationWarning`** to `<html>` and `<body>` tags to avoid browser extension conflicts
-
-## Environment Variables
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
-```
-
-Must be set in Vercel dashboard for production.
-
-## Styling
-
-- Tailwind CSS with custom CSS variables in `globals.css`
-- shadcn/ui components in `components/ui/`
-- Custom glow effects: `.text-glow-white`, `.text-glow-accent`
+components/

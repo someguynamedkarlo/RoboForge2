@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Profile } from "./profile";
+
 export default function Navbar() {
   return (
     <nav className=" fixed w-full z-20 top-0 start-0 b">
@@ -12,9 +13,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/"
-                className="block  my-4 mx-20 text-white text-2xl  text-glow-white  hover:text-accent hover:text-glow-accent
-                
-"
+                className="block my-4 mx-20 text-white text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
                 aria-current="page"
               >
                 Home
@@ -23,7 +22,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/my-projects"
-                className="block my-4 mx-20 text-white text-2xl text-glow-white hover:text-accent hover:text-glow-accent"
+                className="block my-4 mx-20 text-white text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
               >
                 My projects
               </Link>
@@ -31,7 +30,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/fundraising"
-                className="block my-4 mx-20 text-white  text-2xl   text-glow-white  hover:text-accent hover:text-glow-accent"
+                className="block my-4 mx-20 text-white text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
               >
                 Fundraising
               </Link>

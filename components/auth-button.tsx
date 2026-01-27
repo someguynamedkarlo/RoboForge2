@@ -13,7 +13,7 @@ export async function AuthButton() {
   const user = data.user;
 
   return user ? (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 ">
       <img
         src={user?.user_metadata?.avatar_url}
         alt=""
@@ -22,13 +22,7 @@ export async function AuthButton() {
       <LogoutButton />
     </div>
   ) : (
-    <div className="grid gap-2 w-0 ">
-      <Button asChild size="sm" variant={"outline"}>
-        <Link href="/auth/login">Sign in with email</Link>
-      </Button>
-      <Button asChild size="sm" variant={"outline"}>
-        <Link href="/auth/sign-up">Sign up with email</Link>
-      </Button>
+    <div className="grid gap-2 ">
       <GoogleSignInButton />
       <GithubSignInButton />
     </div>

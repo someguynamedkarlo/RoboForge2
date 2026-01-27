@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --background: #01060b;
@@ -21,16 +19,35 @@ body {
   font-family: var(--font-inter), sans-serif;
 }
 
-.text-glow-white {
+@utility text-glow-white {
   text-shadow:
     0 0 6px rgb(255, 255, 255, 0.1),
     0 0 18px rgb(255, 255, 255, 0.2),
     0 0 32px rgb(255, 255, 255, 0.2);
 }
 
-.text-glow-accent {
+@utility text-glow-accent {
   text-shadow:
     0 0 6px rgb(96, 209, 164, 0.1),
     0 0 18px rgb(96, 209, 164, 0.2),
     0 0 32px rgb(96, 209, 164, 0.2);
+}
+
+@keyframes rotate-word {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-rotate-word {
+  animation: rotate-word 0.7s ease-out both;
 }

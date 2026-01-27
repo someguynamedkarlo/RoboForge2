@@ -10,14 +10,21 @@ export async function Profile() {
   const { data } = await supabase.auth.getUser();
 
   const user = data.user;
+  const avatarUrl = (user?.user_metadata?.avatar_url ??
+    user?.user_metadata?.picture) as string | undefined;
 
   return (
     <div className="flex items-center gap-4 my-4 mx-20">
-      <img
-        src={user?.user_metadata?.avatar_url}
-        alt=""
-        className="w-8 h-8 rounded-full"
-      />
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="" className="w-8 h-8 rounded-full" />
+      ) : (
+        <img
+          src={`https://ui-avatars.com/api/?name=${user?.user_metadata?.name ?? user?.email ?? "?"}`}
+          alt=""
+          className="w-8 h-8 rounded-full"
+        />
+      )}
+      <LogoutButton />
     </div>
   );
 }

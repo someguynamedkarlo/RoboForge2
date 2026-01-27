@@ -25,7 +25,7 @@ export function GithubSignInButton() {
   return (
     <Button
       variant="outline"
-      size="sm"
+      size="lg"
       disabled={isPending}
       onClick={handleClick}
     >
