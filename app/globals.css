@@ -5,6 +5,7 @@
   --accent: #60d1a4;
   --secodary: #0880a3;
   --primary: #336aa1;
+  --bg: #d9d9d916;
 }
 
 @theme {
@@ -12,6 +13,7 @@
   --color-accent: var(--accent);
   --color-secondary: var(--secodary);
   --color-primary: var(--primary);
+  --color-project-card: var(--bg);
 }
 
 body {
@@ -33,6 +35,17 @@ body {
     0 0 32px rgb(96, 209, 164, 0.2);
 }
 
+@utility text-glow-primary {
+  text-shadow:
+    0 0 6px rgb(51, 106, 161, 0.1),
+    0 0 18px rgb(51, 106, 161, 0.2),
+    0 0 32px rgb(51, 106, 161, 0.2);
+}
+@utility box-glow-primary {
+  box-shadow:
+    0 0 40px 10px rgb(51, 106, 161, 0.1),
+    0 0 80px 20px rgb(51, 106, 161, 0.2);
+}
 @keyframes rotate-word {
   0% {
     opacity: 0;

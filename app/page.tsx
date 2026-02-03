@@ -24,7 +24,7 @@ export default async function Home() {
             platform to help you
             <RotatingText
               words={["create", "build", "share"]}
-              className="mx-1 text-3xl text-secondary font-extrabold"
+              className="mx-1 text-3xl text-secondary font-extrabold text-glow-primary"
             ></RotatingText>
             your robotics projects
           </h2>
