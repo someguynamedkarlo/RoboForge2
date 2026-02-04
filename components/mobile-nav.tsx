@@ -9,7 +9,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative block md:hidden">
+    <div className="relative block W md:hidden">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -20,7 +20,7 @@ export function MobileNav() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-48 rounded-lg bg-[#0b0f14] border border-white/10 shadow-lg z-30">
+        <div className="absolute right-0 mt-2 w-48 rounded-lg bg-[#0b0f14] border border-white/10 shadow-lg z-20">
           <ul className="flex flex-col divide-y divide-white/10">
             <li>
               <Link

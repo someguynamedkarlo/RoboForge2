@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Ellipsis, Pencil, Trash2 } from "lucide-react";
 import { deleteProject } from "@/lib/supabase/projects";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +11,7 @@ interface ProjectCardProps {
   title: string;
   description?: string;
   coverImageUrl?: string | null;
+  showMenu?: boolean;
 }
 
 export function ProjectCard({
@@ -18,11 +19,14 @@ export function ProjectCard({
   title,
   description,
   coverImageUrl,
+  showMenu = true,
 }: ProjectCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const shouldShowMenu = showMenu && pathname !== "/home";
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -77,39 +81,42 @@ export function ProjectCard({
       href={`/projects/${projectId}`}
       className="relative bg-project-card aspect-square rounded-3xl box-glow-primary flex flex-col items-center justify-center p-4"
     >
-      <div ref={menuRef} className="absolute top-3 right-3 sm:top-4 sm:right-4">
-        <button
-          type="button"
-          onClick={() => setMenuOpen((prev) => !prev)}
-          className="text-white/60 hover:text-white cursor-pointer p-1"
-          aria-label="Project options"
+      {shouldShowMenu && (
+        <div
+          ref={menuRef}
+          className="absolute top-3 right-3 sm:top-4 sm:right-4"
         >
-          <Ellipsis className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
-        {menuOpen && (
-          <div className="absolute right-0 mt-2 w-32 sm:w-36 bg-[#14181D] border border-white/10 rounded-lg shadow-lg overflow-hidden z-10">
-            <button
-              type="button"
-              onClick={handleEdit}
-              className="w-full px-3 sm:px-4 py-2 text-sm text-white hover:bg-white/10 flex items-center gap-2"
-            >
-              <Pencil className="w-4 h-4" />
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="w-full px-3 sm:px-4 py-2 text-sm text-red-400 hover:bg-white/10 flex items-center gap-2 disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              {isDeleting ? "Deleting..." : "Delete"}
-            </button>
-          </div>
-        )}
-      </div>
-
+          <button
+            type="button"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="text-white/60 hover:text-white cursor-pointer p-1"
+            aria-label="Project options"
+          >
+            <Ellipsis className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-32 sm:w-36 bg-[#14181D] border border-white/10 rounded-lg shadow-lg overflow-hidden z-10">
+              <button
+                type="button"
+                onClick={handleEdit}
+                className="w-full px-3 sm:px-4 py-2 text-sm text-white hover:bg-white/10 flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="w-full px-3 sm:px-4 py-2 text-sm text-red-400 hover:bg-white/10 flex items-center gap-2 disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       <img
         src={coverImageUrl ?? ""}
         alt={title}

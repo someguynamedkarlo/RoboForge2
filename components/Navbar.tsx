@@ -7,8 +7,15 @@ export default function Navbar() {
     <nav className="fixed w-full z-20 top-0 start-0 bg-background/80 backdrop-blur-sm">
       <div className="w-full flex items-center justify-between px-4 py-4">
         <div className="w-12 md:w-50">
-          <Link href="/" className="md:hidden text-accent font-bold text-xl">
-            RF
+          <Link
+            href="/"
+            className="flex items-center jusrify-center md:justify-start "
+          >
+            <img src="/favicon.ico" alt="" className="w-10" />
+
+            <h1 className="hidden md:block text-glow-accent text-accent font-bold text-2xl md:visible ml-2">
+              RoboForge
+            </h1>
           </Link>
         </div>
 
