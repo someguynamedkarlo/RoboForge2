@@ -11,7 +11,7 @@ export default async function Home() {
   if (error || !user) {
     redirect("/");
   }
-
+  //
   const { data: projects = [] } = await supabase
     .from("projects")
     .select("id, title, short_description, cover_image_url, created_at")
@@ -26,7 +26,7 @@ export default async function Home() {
             Explore Projects
           </h1>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-16">
-            {projects.map((project) => (
+            {(projects ?? []).map((project) => (
               <ProjectCard
                 key={project.id}
                 projectId={project.id}
