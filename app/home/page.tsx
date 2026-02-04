@@ -13,7 +13,7 @@ async function UserDetails() {
   return JSON.stringify(data, null, 2);
 }
 
-export default function ProtectedPage() {
+export default function Home() {
   return (
     <>
       <Navbar />

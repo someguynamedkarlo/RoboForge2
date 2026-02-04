@@ -14,7 +14,7 @@ export async function Profile() {
     user?.user_metadata?.picture) as string | undefined;
 
   return (
-    <div className="flex items-center gap-4 my-4 mx-20">
+    <div className="flex items-center gap-2 sm:gap-4 my-4 mx-2 sm:mx-4 lg:mx-12 xl:mx-20">
       {avatarUrl ? (
         <img src={avatarUrl} alt="" className="w-8 h-8 rounded-full" />
       ) : (
