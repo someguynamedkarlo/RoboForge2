@@ -1,6 +1,7 @@
 "use client";
-
+import { createClient } from "@/lib/supabase/client";
 import { useState, useRef, ReactNode } from "react";
+import { publishProject } from "@/lib/supabase/projects";
 import {
   Plus,
   Trash2,
@@ -171,7 +172,7 @@ export default function ProjectForm() {
     codeFiles: [],
     miscFiles: [],
   });
-
+  const [isPublishing, setIsPublishing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isDraggingCover, setIsDraggingCover] = useState(false);
   const [isDraggingWiring, setIsDraggingWiring] = useState(false);
@@ -248,13 +249,49 @@ export default function ProjectForm() {
       }));
     }
   };
+  const handlePublish = async () => {
+    if (!validateForm()) return;
 
-  const totalCost = project.components.reduce(
-    (sum, c) => sum + c.cost * c.quantity,
-    0,
-  );
+    setIsPublishing(true);
 
-  // Step handlers
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("You must be logged in to publish");
+        setIsPublishing(false);
+        return;
+      }
+
+      const result = await publishProject(
+        {
+          title: project.title,
+          shortDescription: project.shortDescription,
+          coverImage: project.coverImage,
+          components: project.components,
+          steps: project.steps.map((s) => ({
+            title: s.title,
+            instructions: s.instructions,
+            image: s.image,
+          })),
+          wiringDiagram: project.wiringDiagram,
+          logicExplanation: project.logicExplanation,
+          codeFiles: project.codeFiles,
+          miscFiles: project.miscFiles,
+        },
+        user.id,
+      );
+    } catch (error) {
+      console.error("Publish error:", error);
+      alert("Something went wrong while publishing");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const addStep = () => {
     setProject((prev) => ({
       ...prev,
@@ -370,8 +407,8 @@ export default function ProjectForm() {
     if (!project.title.trim()) newErrors.title = "Project name is required";
     else if (project.title.length > 120)
       newErrors.title = "Project name must be 120 characters or less";
-    if (project.shortDescription.length > 280)
-      newErrors.shortDescription = "Description must be 280 characters or less";
+    if (project.shortDescription.length > 140)
+      newErrors.shortDescription = "Description must be 140 characters or less";
     project.steps.forEach((step, i) => {
       if (!step.title.trim())
         newErrors[`step_${step.id}`] = `Step ${i + 1} title is required`;
@@ -381,9 +418,6 @@ export default function ProjectForm() {
   };
 
   const handleSaveDraft = () => console.log("Saving draft:", project);
-  const handlePublish = () => {
-    if (validateForm()) console.log("Publishing:", project);
-  };
 
   return (
     <div className="space-y-7">
@@ -432,11 +466,11 @@ export default function ProjectForm() {
               }
               placeholder="What does your robot do?"
               rows={4}
-              maxLength={280}
+              maxLength={140}
               className={`${inputClass} resize-none`}
             />
             <p className="text-xs text-[#97a3a9] mt-1 text-right">
-              {project.shortDescription.length}/280
+              {project.shortDescription.length}/140
             </p>
           </div>
           <div>
@@ -506,12 +540,6 @@ export default function ProjectForm() {
             <h2 className="text-lg font-semibold text-white">
               Components List
             </h2>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-[#97a3a9]">Estimated Total</p>
-            <p className="text-lg font-semibold text-[#21bfa3]">
-              ${totalCost.toFixed(2)}
-            </p>
           </div>
         </div>
 
@@ -1030,6 +1058,7 @@ export default function ProjectForm() {
         <button
           type="button"
           onClick={handlePublish}
+          disabled={isPublishing}
           className="px-6 py-3 bg-[#23d18b] cursor-pointer text-[#0b0c0e] text-sm font-semibold rounded-md hover:bg-[#23d18b]/90 transition-colors shadow-md"
         >
           Publish Project
