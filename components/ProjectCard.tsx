@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Ellipsis, Pencil, Trash2 } from "lucide-react";
@@ -12,6 +12,8 @@ interface ProjectCardProps {
   description?: string;
   coverImageUrl?: string | null;
   showMenu?: boolean;
+  href?: string;
+  children?: React.ReactNode;
 }
 
 export function ProjectCard({
@@ -20,6 +22,8 @@ export function ProjectCard({
   description,
   coverImageUrl,
   showMenu = true,
+  href,
+  children,
 }: ProjectCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -27,31 +31,34 @@ export function ProjectCard({
   const router = useRouter();
   const pathname = usePathname();
   const shouldShowMenu = showMenu && pathname !== "/home";
+
   const stopCardNav = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
+
   const handleCardClick = () => {
-    if (!projectId) return;
-    router.push(`/projects/${projectId}`);
+    if (href) {
+      router.push(href);
+      return;
+    }
+    if (projectId) router.push(`/projects/${projectId}`);
   };
 
+  // zatvori meni kad kliknes van
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
     };
-    if (menuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
   const handleEdit = () => {
     setMenuOpen(false);
-    if (!projectId) return;
-    router.push(`/projects/${projectId}/edit`);
+    if (projectId) router.push(`/projects/${projectId}/edit`);
   };
 
   const handleDelete = async () => {
@@ -66,16 +73,15 @@ export function ProjectCard({
       } = await supabase.auth.getUser();
 
       if (!user) {
-        alert("You must be logged in to delete a project");
+        alert("Morate biti prijavljeni za brisanje");
         return;
       }
 
       const result = await deleteProject(projectId, user.id);
-
       if (result.success) {
         router.refresh();
       } else {
-        alert(result.error || "Failed to delete project");
+        alert(result.error || "Brisanje nije uspjelo");
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -142,6 +148,7 @@ export function ProjectCard({
           )}
         </div>
       )}
+
       {coverImageUrl ? (
         <img
           src={coverImageUrl}
@@ -153,12 +160,14 @@ export function ProjectCard({
           No image
         </div>
       )}
+
       <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold p-2 text-center line-clamp-2">
         {title}
       </h1>
       <p className="px-2 sm:px-4 text-sm text-gray-400 text-center line-clamp-2">
         {description}
       </p>
+      {children}
     </div>
   );
 }

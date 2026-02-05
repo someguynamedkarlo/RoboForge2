@@ -20,7 +20,7 @@ export function RotatingText({
   paddingRightCh = 0,
 }: RotatingTextProps) {
   const [index, setIndex] = useState(0);
-  const longestWordLength = Math.max(0, ...words.map((word) => word.length));
+  const longestWordLength = Math.max(0, ...words.map((w) => w.length));
   const minWidth = minWidthCh ?? longestWordLength;
 
   useEffect(() => {

@@ -8,7 +8,6 @@ export default async function ProjectPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
   if (!id) notFound();
 
   const supabase = await createClient();
@@ -22,7 +21,7 @@ export default async function ProjectPage({
     .single();
 
   if (projectError || !project) {
-    console.log("Get project error:", projectError);
+    console.log("Greška:", projectError);
     notFound();
   }
 
@@ -58,8 +57,7 @@ export default async function ProjectPage({
         try {
           const res = await fetch(f.file_url);
           const text = await res.text();
-          const preview = text.split("\n").slice(0, 50).join("\n");
-          return { ...f, preview };
+          return { ...f, preview: text.split("\n").slice(0, 50).join("\n") };
         } catch {
           return { ...f, preview: "Preview unavailable." };
         }
@@ -70,7 +68,6 @@ export default async function ProjectPage({
     <>
       <Navbar />
       <main className="pb-12 text-white">
-        {/* Hero cover image */}
         {project.cover_image_url && (
           <div className="relative w-full h-[80vh] md:h-[85vh]">
             <img
@@ -78,9 +75,9 @@ export default async function ProjectPage({
               alt={project.title}
               className="w-full h-full object-cover"
             />
-            {/* Gradient fade overlay */}
+
             <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 via-80% to-transparent" />
-            {/* Title positioned at the fade */}
+
             <div className="absolute bottom-12 left-0 right-0">
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end ">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold drop-shadow-lg text-left">
@@ -103,7 +100,6 @@ export default async function ProjectPage({
           )}
 
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left column - Description and content */}
             <div className="flex-1 space-y-6">
               <h2 className="text-xl">{project.short_description}</h2>
 
@@ -231,9 +227,7 @@ export default async function ProjectPage({
               </section>
             </div>
 
-            {/* Right column - Author & Components */}
             <div className="lg:w-[22rem] space-y-4">
-              {/* Author box with accent border and glow */}
               {profile && (
                 <div className="border-2 border-accent rounded-xl p-4 shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] w-max">
                   <div className="flex items-center gap-3">
@@ -258,7 +252,6 @@ export default async function ProjectPage({
                 </div>
               )}
 
-              {/* Components box with accent border */}
               <div className="border-2 border-accent rounded-xl p-4">
                 <h2 className="text-xl font-semibold mb-3">Components</h2>
                 <ul className="space-y-2 text-gray-300 text-sm">

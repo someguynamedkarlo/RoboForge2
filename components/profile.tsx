@@ -1,14 +1,9 @@
-import Link from "next/link";
-
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
 
 export async function Profile() {
   const supabase = await createClient();
-
-  // You can also use getUser() which will be slower.
   const { data } = await supabase.auth.getUser();
-
   const user = data.user;
   const avatarUrl = (user?.user_metadata?.avatar_url ??
     user?.user_metadata?.picture) as string | undefined;

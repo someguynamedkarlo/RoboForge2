@@ -9,7 +9,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative block W md:hidden">
+    <div className="relative block md:hidden">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}

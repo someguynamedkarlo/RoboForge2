@@ -6,10 +6,7 @@ import ProjectForm from "@/components/ProjectForm";
 export default async function CreateProjectPage() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    redirect("/");
-  }
+  if (error || !data?.user) redirect("/");
 
   return (
     <>

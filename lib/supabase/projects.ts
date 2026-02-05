@@ -33,6 +33,7 @@ interface ProjectInput {
   miscFiles: FileInput[];
 }
 
+// objavi novi projekt
 export async function publishProject(
   data: ProjectInput,
   profileId: string,
@@ -58,12 +59,12 @@ export async function publishProject(
       .select("id")
       .single();
 
-    if (projectError || !newProject) {
-      throw new Error(projectError?.message || "Failed to create project");
-    }
+    if (projectError || !newProject)
+      throw new Error(projectError?.message || "Greška pri kreiranju projekta");
 
     const projectId = newProject.id;
 
+    // upload slika
     let coverImageUrl: string | null = null;
     if (data.coverImage) {
       coverImageUrl = await uploadProjectFile(
@@ -90,6 +91,7 @@ export async function publishProject(
       })
       .eq("id", projectId);
 
+    // koraci
     const stepsToInsert = await Promise.all(
       data.steps.map(async (step, index) => {
         let imageUrl: string | null = null;
@@ -105,9 +107,9 @@ export async function publishProject(
         };
       }),
     );
-
     await supabase.from("project_steps").insert(stepsToInsert);
 
+    // komponente
     const componentsToInsert = data.components
       .filter((c) => c.name.trim())
       .map((comp) => ({
@@ -117,11 +119,11 @@ export async function publishProject(
         cost: comp.cost,
         link: comp.link || null,
       }));
-
     if (componentsToInsert.length > 0) {
       await supabase.from("project_components").insert(componentsToInsert);
     }
 
+    // kod datoteke
     for (const codeFile of data.codeFiles) {
       const fileUrl = await uploadProjectFile(
         projectId,
@@ -139,6 +141,7 @@ export async function publishProject(
       }
     }
 
+    // ostale datoteke
     for (const miscFile of data.miscFiles) {
       const fileUrl = await uploadProjectFile(
         projectId,
@@ -161,26 +164,19 @@ export async function publishProject(
     console.error("Publish error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Nepoznata greška",
     };
   }
 }
 
+// dohvati projekte
 export async function getProjects(limit = 20, offset = 0) {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("projects")
     .select(
-      `
-      id,
-      title,
-      short_description,
-      cover_image_url,
-      total_cost,
-      created_at,
-      profiles ( username, avatar_url )
-    `,
+      "id, title, short_description, cover_image_url, total_cost, created_at, profiles(username, avatar_url)",
     )
     .eq("published", true)
     .order("created_at", { ascending: false })
@@ -190,25 +186,17 @@ export async function getProjects(limit = 20, offset = 0) {
     console.error("Get projects error:", error);
     return [];
   }
-
   return data;
 }
 
+// korisnikovi projekti
 export async function getUserProjects(profileId: string) {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("projects")
     .select(
-      `
-      id,
-      title,
-      short_description,
-      cover_image_url,
-      total_cost,
-      published,
-      created_at
-    `,
+      "id, title, short_description, cover_image_url, total_cost, published, created_at",
     )
     .eq("profile_id", profileId)
     .order("created_at", { ascending: false });
@@ -217,10 +205,10 @@ export async function getUserProjects(profileId: string) {
     console.error("Get user projects error:", error);
     return [];
   }
-
   return data;
 }
 
+// brisanje projekta
 export async function deleteProject(
   projectId: string,
   profileId: string,
@@ -234,7 +222,7 @@ export async function deleteProject(
     .single();
 
   if (!project || project.profile_id !== profileId) {
-    return { success: false, error: "Unauthorized" };
+    return { success: false, error: "Neautorizirano" };
   }
 
   await deleteProjectFiles(projectId);
@@ -243,14 +231,12 @@ export async function deleteProject(
     .from("projects")
     .delete()
     .eq("id", projectId);
-
-  if (error) {
-    return { success: false, error: error.message };
-  }
+  if (error) return { success: false, error: error.message };
 
   return { success: true };
 }
 
+// ažuriraj projekt
 export async function updateProject(
   projectId: string,
   data: ProjectInput,
@@ -299,6 +285,7 @@ export async function updateProject(
 
     if (updateError) throw updateError;
 
+    // zamijeni komponente
     await supabase
       .from("project_components")
       .delete()
@@ -316,6 +303,7 @@ export async function updateProject(
       await supabase.from("project_components").insert(componentsToInsert);
     }
 
+    // zamijeni korake
     await supabase.from("project_steps").delete().eq("project_id", projectId);
     const stepsToInsert = await Promise.all(
       data.steps.map(async (step, index) => {
@@ -336,6 +324,7 @@ export async function updateProject(
       await supabase.from("project_steps").insert(stepsToInsert);
     }
 
+    // nove kod datoteke
     for (const codeFile of data.codeFiles) {
       const fileUrl = await uploadProjectFile(
         projectId,
@@ -353,6 +342,7 @@ export async function updateProject(
       }
     }
 
+    // nove ostale datoteke
     for (const miscFile of data.miscFiles) {
       const fileUrl = await uploadProjectFile(
         projectId,
@@ -375,7 +365,7 @@ export async function updateProject(
     console.error("Update error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Nepoznata greška",
     };
   }
 }

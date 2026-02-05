@@ -9,22 +9,20 @@ import { ProjectCard } from "@/components/ProjectCard";
 export default async function MyProjects() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
-  const user = data.user;
+  if (!data.user) redirect("/");
 
-  if (!user) {
-    redirect("/");
-  }
+  // dohvati projekte korisnika
+  const projects = await getUserProjects(data.user.id);
 
-  const projects = await getUserProjects(user.id);
   return (
     <>
       <Navbar />
       <main className="pt-24 md:pt-32 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl  md:ml-20 sm:mx-auto">
+        <div className="max-w-6xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-6">
             My Projects
           </h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-16">
             <div className="bg-project-card aspect-square rounded-3xl box-glow-primary flex items-center justify-center">
               <Link
                 href="/create-project"

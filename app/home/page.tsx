@@ -6,12 +6,9 @@ import { ProjectCard } from "@/components/ProjectCard";
 export default async function Home() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
-  const user = data?.user;
+  if (error || !data?.user) redirect("/");
 
-  if (error || !user) {
-    redirect("/");
-  }
-  //
+  // uzmi sve projekte
   const { data: projects = [] } = await supabase
     .from("projects")
     .select("id, title, short_description, cover_image_url, created_at")
@@ -21,7 +18,7 @@ export default async function Home() {
     <>
       <Navbar />
       <main className="pt-24 md:pt-32 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-6">
             Explore Projects
           </h1>

@@ -609,7 +609,7 @@ export default function ProjectForm({
           </div>
         </div>
       </section>
-
+      {/* komponente */}
       <section className="bg-[#0f1619] rounded-[14px] p-7">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -710,8 +710,7 @@ export default function ProjectForm({
           Add Component
         </button>
       </section>
-
-      {/* ============ Card 3: Assembling Steps ============ */}
+      /* koraci sklapanja */
       <section className="bg-[#0f1619] rounded-[14px] p-7">
         <div className="flex items-center gap-3 mb-5">
           <Cpu className="w-5 h-5 text-[#21bfa3]" />
@@ -874,8 +873,7 @@ export default function ProjectForm({
           </button>
         </div>
       </section>
-
-      {/* ============ Card 4: Wiring Diagram ============ */}
+      /* sliak spajanja */
       <section className="bg-[#0f1619] rounded-[14px] p-7">
         <div className="flex items-center gap-3 mb-2">
           <Cable className="w-5 h-5 text-[#21bfa3]" />
@@ -951,8 +949,6 @@ export default function ProjectForm({
           </p>
         )}
       </section>
-
-      {/* ============ Card 5: Code & Algorithms ============ */}
       <section className="bg-[#0f1619] rounded-[14px] p-7">
         <div className="flex items-center gap-3 mb-5">
           <FileCode className="w-5 h-5 text-[#21bfa3]" />
@@ -962,7 +958,6 @@ export default function ProjectForm({
         </div>
 
         <div className="space-y-5">
-          {/* Logic Explanation */}
           <div>
             <label
               htmlFor="logicExplanation"
@@ -983,7 +978,6 @@ export default function ProjectForm({
             />
           </div>
 
-          {/* Code Files */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -1050,8 +1044,6 @@ export default function ProjectForm({
           </div>
         </div>
       </section>
-
-      {/* ============ Card 6: 3D Prints & Misc Files ============ */}
       <section className="bg-[#0f1619] rounded-[14px] p-7">
         <div className="flex items-center gap-3 mb-2">
           <Box className="w-5 h-5 text-[#21bfa3]" />
@@ -1122,8 +1114,7 @@ export default function ProjectForm({
           </ul>
         )}
       </section>
-
-      {/* ============ Bottom Actions ============ */}
+      {/* objavi */}
       <div className="flex justify-end gap-4">
         <button
           type="button"

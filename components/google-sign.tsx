@@ -13,12 +13,12 @@ export function GoogleSignInButton() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/confirm`, // keep in-app flow
+          redirectTo: `${window.location.origin}/auth/confirm`,
         },
       });
       if (error) {
         console.error(error);
-        alert("Google sign-in failed. Check console for details.");
+        alert("Google prijava nije uspjela.");
       }
     });
 
