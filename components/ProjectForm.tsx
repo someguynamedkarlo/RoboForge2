@@ -357,7 +357,8 @@ export default function ProjectForm({
         : await publishProject(payload, user.id);
 
       if (result.success) {
-        const targetId = projectId ?? result.projectId;
+        const targetId =
+          projectId || ("projectId" in result ? result.projectId : undefined);
         if (targetId) router.push(`/projects/${targetId}`);
       }
     } catch (error) {
