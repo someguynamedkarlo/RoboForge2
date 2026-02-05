@@ -62,7 +62,7 @@ export default async function ProjectPage({
             <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 via-80% to-transparent" />
             {/* Title positioned at the fade */}
             <div className="absolute bottom-12 left-0 right-0">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-end ">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold drop-shadow-lg text-left">
                   {project.title}
                 </h1>

@@ -27,6 +27,14 @@ export function ProjectCard({
   const router = useRouter();
   const pathname = usePathname();
   const shouldShowMenu = showMenu && pathname !== "/home";
+  const stopCardNav = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const handleCardClick = () => {
+    if (!projectId) return;
+    router.push(`/projects/${projectId}`);
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -42,7 +50,8 @@ export function ProjectCard({
 
   const handleEdit = () => {
     setMenuOpen(false);
-    console.log("Edit project:", projectId);
+    if (!projectId) return;
+    router.push(`/projects/${projectId}/edit`);
   };
 
   const handleDelete = async () => {
@@ -77,18 +86,28 @@ export function ProjectCard({
   };
 
   return (
-    <Link
-      href={`/projects/${projectId}`}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") handleCardClick();
+      }}
       className="relative bg-project-card aspect-square rounded-3xl box-glow-primary flex flex-col items-center justify-center p-4"
     >
       {shouldShowMenu && (
         <div
           ref={menuRef}
           className="absolute top-3 right-3 sm:top-4 sm:right-4"
+          onClick={stopCardNav}
+          onMouseDown={stopCardNav}
         >
           <button
             type="button"
-            onClick={() => setMenuOpen((prev) => !prev)}
+            onClick={(e) => {
+              stopCardNav(e);
+              setMenuOpen((prev) => !prev);
+            }}
             className="text-white/60 hover:text-white cursor-pointer p-1"
             aria-label="Project options"
           >
@@ -98,7 +117,10 @@ export function ProjectCard({
             <div className="absolute right-0 mt-2 w-32 sm:w-36 bg-[#14181D] border border-white/10 rounded-lg shadow-lg overflow-hidden z-10">
               <button
                 type="button"
-                onClick={handleEdit}
+                onClick={(e) => {
+                  stopCardNav(e);
+                  handleEdit();
+                }}
                 className="w-full px-3 sm:px-4 py-2 text-sm text-white hover:bg-white/10 flex items-center gap-2"
               >
                 <Pencil className="w-4 h-4" />
@@ -106,7 +128,10 @@ export function ProjectCard({
               </button>
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={async (e) => {
+                  stopCardNav(e);
+                  await handleDelete();
+                }}
                 disabled={isDeleting}
                 className="w-full px-3 sm:px-4 py-2 text-sm text-red-400 hover:bg-white/10 flex items-center gap-2 disabled:opacity-50"
               >
@@ -128,6 +153,6 @@ export function ProjectCard({
       <p className="px-2 sm:px-4 text-sm text-gray-400 text-center line-clamp-2">
         {description}
       </p>
-    </Link>
+    </div>
   );
 }

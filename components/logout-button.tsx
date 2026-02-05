@@ -14,7 +14,12 @@ export function LogoutButton() {
   };
 
   return (
-    <Button variant="outline" size="sm" onClick={logout}>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={logout}
+      className="cursor-pointer"
+    >
       Logout
     </Button>
   );

@@ -5,6 +5,7 @@ interface StepInput {
   title: string;
   instructions: string;
   image: File | null;
+  imageUrl?: string | null;
 }
 
 interface ComponentInput {
@@ -248,4 +249,133 @@ export async function deleteProject(
   }
 
   return { success: true };
+}
+
+export async function updateProject(
+  projectId: string,
+  data: ProjectInput,
+  options?: {
+    existingCoverImageUrl?: string | null;
+    existingWiringDiagramUrl?: string | null;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createClient();
+
+  try {
+    const totalCost = data.components.reduce(
+      (sum, c) => sum + c.cost * c.quantity,
+      0,
+    );
+
+    let coverImageUrl = options?.existingCoverImageUrl ?? null;
+    if (data.coverImage) {
+      coverImageUrl = await uploadProjectFile(
+        projectId,
+        "images",
+        data.coverImage,
+      );
+    }
+
+    let wiringDiagramUrl = options?.existingWiringDiagramUrl ?? null;
+    if (data.wiringDiagram) {
+      wiringDiagramUrl = await uploadProjectFile(
+        projectId,
+        "images",
+        data.wiringDiagram,
+      );
+    }
+
+    const { error: updateError } = await supabase
+      .from("projects")
+      .update({
+        title: data.title,
+        short_description: data.shortDescription,
+        logic_explanation: data.logicExplanation,
+        total_cost: totalCost,
+        cover_image_url: coverImageUrl,
+        wiring_diagram_url: wiringDiagramUrl,
+      })
+      .eq("id", projectId);
+
+    if (updateError) throw updateError;
+
+    await supabase
+      .from("project_components")
+      .delete()
+      .eq("project_id", projectId);
+    const componentsToInsert = data.components
+      .filter((c) => c.name.trim())
+      .map((comp) => ({
+        project_id: projectId,
+        name: comp.name,
+        quantity: comp.quantity,
+        cost: comp.cost,
+        link: comp.link || null,
+      }));
+    if (componentsToInsert.length > 0) {
+      await supabase.from("project_components").insert(componentsToInsert);
+    }
+
+    await supabase.from("project_steps").delete().eq("project_id", projectId);
+    const stepsToInsert = await Promise.all(
+      data.steps.map(async (step, index) => {
+        let imageUrl = step.imageUrl ?? null;
+        if (step.image) {
+          imageUrl = await uploadProjectFile(projectId, "images", step.image);
+        }
+        return {
+          project_id: projectId,
+          step_order: index + 1,
+          title: step.title,
+          instructions: step.instructions,
+          image_url: imageUrl,
+        };
+      }),
+    );
+    if (stepsToInsert.length > 0) {
+      await supabase.from("project_steps").insert(stepsToInsert);
+    }
+
+    for (const codeFile of data.codeFiles) {
+      const fileUrl = await uploadProjectFile(
+        projectId,
+        "code_files",
+        codeFile.file,
+      );
+      if (fileUrl) {
+        await supabase.from("project_files").insert({
+          project_id: projectId,
+          file_url: fileUrl,
+          file_name: codeFile.name,
+          file_size: codeFile.size,
+          file_type: "code",
+        });
+      }
+    }
+
+    for (const miscFile of data.miscFiles) {
+      const fileUrl = await uploadProjectFile(
+        projectId,
+        "misc_files",
+        miscFile.file,
+      );
+      if (fileUrl) {
+        await supabase.from("project_files").insert({
+          project_id: projectId,
+          file_url: fileUrl,
+          file_name: miscFile.name,
+          file_size: miscFile.size,
+          file_type: "misc",
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }

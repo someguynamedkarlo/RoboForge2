@@ -1,7 +1,8 @@
 "use client";
 import { createClient } from "@/lib/supabase/client";
 import { useState, useRef, ReactNode } from "react";
-import { publishProject } from "@/lib/supabase/projects";
+import { publishProject, updateProject } from "@/lib/supabase/projects";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Trash2,
@@ -148,29 +149,96 @@ const validateImage = (file: File, maxMB: number): string | null => {
   return null;
 };
 
-export default function ProjectForm() {
-  const [project, setProject] = useState<ProjectState>({
-    title: "",
-    shortDescription: "",
-    coverImage: null,
-    coverImageUrl: null,
-    components: [
-      { id: crypto.randomUUID(), name: "", quantity: 1, cost: 0, link: "" },
-    ],
-    steps: [
-      {
-        id: crypto.randomUUID(),
-        title: "",
-        instructions: "",
-        image: null,
-        imageUrl: null,
-      },
-    ],
-    wiringDiagram: null,
-    wiringDiagramUrl: null,
-    logicExplanation: "",
-    codeFiles: [],
-    miscFiles: [],
+interface ProjectFormProps {
+  projectId?: string;
+  initialData?: {
+    title: string;
+    shortDescription: string;
+    coverImageUrl: string | null;
+    wiringDiagramUrl: string | null;
+    logicExplanation: string;
+    components: Component[];
+    steps: Array<Omit<Step, "id" | "image"> & { image: null }>;
+  };
+}
+
+export default function ProjectForm({
+  projectId,
+  initialData,
+}: ProjectFormProps = {}) {
+  const router = useRouter();
+  const [project, setProject] = useState<ProjectState>(() => {
+    if (initialData) {
+      return {
+        title: initialData.title,
+        shortDescription: initialData.shortDescription ?? "",
+        coverImage: null,
+        coverImageUrl: initialData.coverImageUrl,
+        components:
+          initialData.components.length > 0
+            ? initialData.components.map((c) => ({
+                ...c,
+                id: crypto.randomUUID(),
+              }))
+            : [
+                {
+                  id: crypto.randomUUID(),
+                  name: "",
+                  quantity: 1,
+                  cost: 0,
+                  link: "",
+                },
+              ],
+        steps:
+          initialData.steps.length > 0
+            ? initialData.steps
+                .sort((a, b) => (a as any).step_order - (b as any).step_order)
+                .map((s) => ({
+                  id: crypto.randomUUID(),
+                  title: s.title,
+                  instructions: s.instructions,
+                  image: null,
+                  imageUrl: s.imageUrl ?? (s as any).image_url ?? null,
+                }))
+            : [
+                {
+                  id: crypto.randomUUID(),
+                  title: "",
+                  instructions: "",
+                  image: null,
+                  imageUrl: null,
+                },
+              ],
+        wiringDiagram: null,
+        wiringDiagramUrl: initialData.wiringDiagramUrl,
+        logicExplanation: initialData.logicExplanation ?? "",
+        codeFiles: [],
+        miscFiles: [],
+      };
+    }
+    return {
+      title: "",
+      shortDescription: "",
+      coverImage: null,
+      coverImageUrl: null,
+      components: [
+        { id: crypto.randomUUID(), name: "", quantity: 1, cost: 0, link: "" },
+      ],
+      steps: [
+        {
+          id: crypto.randomUUID(),
+          title: "",
+          instructions: "",
+          image: null,
+          imageUrl: null,
+        },
+      ],
+      wiringDiagram: null,
+      wiringDiagramUrl: null,
+      logicExplanation: "",
+      codeFiles: [],
+      miscFiles: [],
+    };
   });
   const [isPublishing, setIsPublishing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -251,7 +319,6 @@ export default function ProjectForm() {
   };
   const handlePublish = async () => {
     if (!validateForm()) return;
-
     setIsPublishing(true);
 
     try {
@@ -261,32 +328,40 @@ export default function ProjectForm() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        alert("You must be logged in to publish");
         setIsPublishing(false);
         return;
       }
 
-      const result = await publishProject(
-        {
-          title: project.title,
-          shortDescription: project.shortDescription,
-          coverImage: project.coverImage,
-          components: project.components,
-          steps: project.steps.map((s) => ({
-            title: s.title,
-            instructions: s.instructions,
-            image: s.image,
-          })),
-          wiringDiagram: project.wiringDiagram,
-          logicExplanation: project.logicExplanation,
-          codeFiles: project.codeFiles,
-          miscFiles: project.miscFiles,
-        },
-        user.id,
-      );
+      const payload = {
+        title: project.title,
+        shortDescription: project.shortDescription,
+        coverImage: project.coverImage,
+        components: project.components,
+        steps: project.steps.map((s) => ({
+          title: s.title,
+          instructions: s.instructions,
+          image: s.image,
+          imageUrl: s.imageUrl,
+        })),
+        wiringDiagram: project.wiringDiagram,
+        logicExplanation: project.logicExplanation,
+        codeFiles: project.codeFiles,
+        miscFiles: project.miscFiles,
+      };
+
+      const result = projectId
+        ? await updateProject(projectId, payload, {
+            existingCoverImageUrl: project.coverImageUrl,
+            existingWiringDiagramUrl: project.wiringDiagramUrl,
+          })
+        : await publishProject(payload, user.id);
+
+      if (result.success) {
+        const targetId = projectId ?? result.projectId;
+        if (targetId) router.push(`/projects/${targetId}`);
+      }
     } catch (error) {
-      console.error("Publish error:", error);
-      alert("Something went wrong while publishing");
+      console.error("Publish/Update error:", error);
     } finally {
       setIsPublishing(false);
     }
@@ -416,8 +491,6 @@ export default function ProjectForm() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const handleSaveDraft = () => console.log("Saving draft:", project);
 
   return (
     <div className="space-y-7">
@@ -1050,18 +1123,11 @@ export default function ProjectForm() {
       <div className="flex justify-end gap-4">
         <button
           type="button"
-          onClick={handleSaveDraft}
-          className="px-5 py-3 bg-transparent cursor-pointer text-white text-sm font-medium rounded-md border border-white/10 hover:border-white/20"
-        >
-          Save Draft
-        </button>
-        <button
-          type="button"
           onClick={handlePublish}
           disabled={isPublishing}
           className="px-6 py-3 bg-[#23d18b] cursor-pointer text-[#0b0c0e] text-sm font-semibold rounded-md hover:bg-[#23d18b]/90 transition-colors shadow-md"
         >
-          Publish Project
+          {projectId ? "Update Project" : "Publish Project"}
         </button>
       </div>
     </div>
