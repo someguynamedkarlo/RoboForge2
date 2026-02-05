@@ -93,7 +93,7 @@ export function ProjectCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") handleCardClick();
       }}
-      className="relative bg-project-card aspect-square rounded-3xl box-glow-primary flex flex-col items-center justify-center p-4"
+      className="relative bg-project-card aspect-square rounded-3xl box-glow-primary flex flex-col items-center justify-center p-4 cursor-pointer hover:scale-[1.02] transition-transform"
     >
       {shouldShowMenu && (
         <div
@@ -142,11 +142,17 @@ export function ProjectCard({
           )}
         </div>
       )}
-      <img
-        src={coverImageUrl ?? ""}
-        alt={title}
-        className="rounded-2xl w-full max-w-[70%] aspect-square object-cover"
-      />
+      {coverImageUrl ? (
+        <img
+          src={coverImageUrl}
+          alt={title}
+          className="rounded-2xl w-full max-w-[70%] aspect-square object-cover"
+        />
+      ) : (
+        <div className="rounded-2xl w-full max-w-[70%] aspect-square bg-white/5 flex items-center justify-center text-sm text-gray-400">
+          No image
+        </div>
+      )}
       <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold p-2 text-center line-clamp-2">
         {title}
       </h1>

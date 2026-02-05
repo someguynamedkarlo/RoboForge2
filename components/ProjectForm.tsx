@@ -318,7 +318,10 @@ export default function ProjectForm({
     }
   };
   const handlePublish = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      alert("Please fix the highlighted fields before continuing.");
+      return;
+    }
     setIsPublishing(true);
 
     try {
@@ -1126,7 +1129,11 @@ export default function ProjectForm({
           type="button"
           onClick={handlePublish}
           disabled={isPublishing}
-          className="px-6 py-3 bg-[#23d18b] cursor-pointer text-[#0b0c0e] text-sm font-semibold rounded-md hover:bg-[#23d18b]/90 transition-colors shadow-md"
+          className={`px-6 py-3 bg-[#23d18b] text-[#0b0c0e] text-sm font-semibold rounded-md transition-colors shadow-md ${
+            isPublishing
+              ? "opacity-75 cursor-wait"
+              : "hover:bg-[#23d18b]/90 cursor-pointer"
+          }`}
         >
           {projectId ? "Update Project" : "Publish Project"}
         </button>

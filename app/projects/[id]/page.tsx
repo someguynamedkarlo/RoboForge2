@@ -16,7 +16,7 @@ export default async function ProjectPage({
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select(
-      "id, title, short_description, cover_image_url, wiring_diagram_url, total_cost, created_at, profiles(id, full_name, avatar_url)",
+      "id, title, short_description, logic_explanation, cover_image_url, wiring_diagram_url, total_cost, created_at, profiles(id, full_name, avatar_url)",
     )
     .eq("id", id)
     .single();
@@ -46,6 +46,26 @@ export default async function ProjectPage({
         .eq("project_id", project.id),
     ]);
 
+  const allowedCodeExt = [".py", ".cpp", ".c", ".h", ".ino", ".js", ".ts"];
+  const codePreviews = await Promise.all(
+    (files ?? [])
+      .filter((f) => {
+        if (f.file_type !== "code") return false;
+        const ext = `.${f.file_name.split(".").pop()?.toLowerCase() ?? ""}`;
+        return allowedCodeExt.includes(ext);
+      })
+      .map(async (f) => {
+        try {
+          const res = await fetch(f.file_url);
+          const text = await res.text();
+          const preview = text.split("\n").slice(0, 50).join("\n");
+          return { ...f, preview };
+        } catch {
+          return { ...f, preview: "Preview unavailable." };
+        }
+      }),
+  );
+
   return (
     <>
       <Navbar />
@@ -71,7 +91,11 @@ export default async function ProjectPage({
           </div>
         )}
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div
+          className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 ${
+            project.cover_image_url ? "pt-8" : "pt-24 md:pt-32"
+          }`}
+        >
           {!project.cover_image_url && (
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
               {project.title}
@@ -111,6 +135,80 @@ export default async function ProjectPage({
                 </ol>
               </section>
 
+              {project.wiring_diagram_url && (
+                <section className="space-y-3">
+                  <h2 className="text-2xl font-semibold">Wiring Diagram</h2>
+                  {project.wiring_diagram_url.endsWith(".pdf") ? (
+                    <a
+                      href={project.wiring_diagram_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent underline"
+                    >
+                      View wiring diagram (PDF)
+                    </a>
+                  ) : (
+                    <img
+                      src={project.wiring_diagram_url}
+                      alt="Wiring diagram"
+                      className="rounded-lg border border-white/10 max-w-xl w-full object-contain"
+                    />
+                  )}
+                </section>
+              )}
+
+              {project.logic_explanation && (
+                <section className="space-y-2">
+                  <h2 className="text-2xl font-semibold">Logic Explanation</h2>
+                  <pre className="bg-white/5 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-200">
+                    {project.logic_explanation}
+                  </pre>
+                </section>
+              )}
+
+              {codePreviews.length > 0 && (
+                <section className="space-y-3">
+                  <h2 className="text-2xl font-semibold">Code Preview</h2>
+                  <div className="space-y-3">
+                    {codePreviews.map((f) => (
+                      <div
+                        key={f.file_url}
+                        className="bg-white/5 rounded-lg p-3 border border-white/10"
+                      >
+                        <div className="flex items-center justify-between text-sm text-gray-300 mb-2">
+                          <span>{f.file_name}</span>
+                          <a
+                            href={f.file_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-accent underline"
+                          >
+                            Download
+                          </a>
+                        </div>
+                        <pre className="bg-black/40 rounded-md p-0 text-xs overflow-auto max-h-64">
+                          <div className="divide-y divide-white/5">
+                            {f.preview.split("\n").map((line, i) => (
+                              <div
+                                key={i}
+                                className="flex gap-3 px-3 py-1 text-left"
+                              >
+                                <span className="w-10 text-right text-gray-400 select-none">
+                                  {i + 1}
+                                </span>
+                                <span className="whitespace-pre text-gray-100">
+                                  {line || " "}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <section className="space-y-2">
                 <h2 className="text-xl font-semibold">Files</h2>
                 <ul className="space-y-1 text-gray-300">
@@ -134,10 +232,10 @@ export default async function ProjectPage({
             </div>
 
             {/* Right column - Author & Components */}
-            <div className="lg:w-80 space-y-4">
+            <div className="lg:w-[22rem] space-y-4">
               {/* Author box with accent border and glow */}
               {profile && (
-                <div className="border-2 border-accent rounded-xl p-4 shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)]">
+                <div className="border-2 border-accent rounded-xl p-4 shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] w-max">
                   <div className="flex items-center gap-3">
                     {profile.avatar_url ? (
                       <img
