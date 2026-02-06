@@ -35,3 +35,29 @@ export async function deleteProjectFiles(projectId: string): Promise<void> {
     }
   }
 }
+
+export async function deleteProjectFileByUrl(
+  bucket: Bucket,
+  fileUrl: string | null | undefined,
+): Promise<void> {
+  if (!fileUrl) return;
+  const supabase = createClient();
+  const publicPrefix = `/storage/v1/object/public/${bucket}/`;
+  const directPrefix = `/${bucket}/`;
+
+  let path = fileUrl;
+  const publicIndex = fileUrl.indexOf(publicPrefix);
+  if (publicIndex !== -1) {
+    path = fileUrl.slice(publicIndex + publicPrefix.length);
+  } else {
+    const directIndex = fileUrl.indexOf(directPrefix);
+    if (directIndex !== -1) {
+      path = fileUrl.slice(directIndex + directPrefix.length);
+    }
+  }
+
+  path = path.split("?")[0].replace(/^\/+/, "");
+  if (!path || path.includes("http")) return;
+
+  await supabase.storage.from(bucket).remove([path]);
+}

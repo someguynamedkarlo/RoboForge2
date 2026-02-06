@@ -47,6 +47,14 @@ interface MiscFile {
   size: number;
 }
 
+interface ExistingFile {
+  id: string;
+  url: string;
+  name: string;
+  size: number;
+  type: "code" | "misc";
+}
+
 interface ProjectState {
   title: string;
   shortDescription: string;
@@ -59,6 +67,9 @@ interface ProjectState {
   logicExplanation: string;
   codeFiles: CodeFile[];
   miscFiles: MiscFile[];
+  existingCodeFiles: ExistingFile[];
+  existingMiscFiles: ExistingFile[];
+  removedFiles: ExistingFile[];
   videoUrl: string;
 }
 
@@ -162,6 +173,8 @@ interface ProjectFormProps {
     videoUrl: string;
     components: Component[];
     steps: Array<Omit<Step, "id" | "image"> & { image: null }>;
+    existingCodeFiles?: ExistingFile[];
+    existingMiscFiles?: ExistingFile[];
   };
 }
 
@@ -217,6 +230,9 @@ export default function ProjectForm({
         logicExplanation: initialData.logicExplanation ?? "",
         codeFiles: [],
         miscFiles: [],
+        existingCodeFiles: initialData.existingCodeFiles ?? [],
+        existingMiscFiles: initialData.existingMiscFiles ?? [],
+        removedFiles: [],
         videoUrl: initialData.videoUrl ?? "",
       };
     }
@@ -242,6 +258,9 @@ export default function ProjectForm({
       logicExplanation: "",
       codeFiles: [],
       miscFiles: [],
+      existingCodeFiles: [],
+      existingMiscFiles: [],
+      removedFiles: [],
       videoUrl: "",
     };
   });
@@ -362,6 +381,7 @@ export default function ProjectForm({
         ? await updateProject(projectId, payload, {
             existingCoverImageUrl: project.coverImageUrl,
             existingWiringDiagramUrl: project.wiringDiagramUrl,
+            removedFiles: project.removedFiles,
           })
         : await publishProject(payload, user.id);
 
@@ -485,6 +505,26 @@ export default function ProjectForm({
       ...prev,
       miscFiles: [...prev.miscFiles, ...newFiles],
     }));
+  };
+
+  const removeExistingFile = (file: ExistingFile) => {
+    setProject((prev) => {
+      const alreadyRemoved = prev.removedFiles.some((f) => f.id === file.id);
+      return {
+        ...prev,
+        existingCodeFiles:
+          file.type === "code"
+            ? prev.existingCodeFiles.filter((f) => f.id !== file.id)
+            : prev.existingCodeFiles,
+        existingMiscFiles:
+          file.type === "misc"
+            ? prev.existingMiscFiles.filter((f) => f.id !== file.id)
+            : prev.existingMiscFiles,
+        removedFiles: alreadyRemoved
+          ? prev.removedFiles
+          : [...prev.removedFiles, file],
+      };
+    });
   };
 
   const validateForm = (): boolean => {
@@ -740,7 +780,7 @@ export default function ProjectForm({
           Add Component
         </button>
       </section>
-      /* koraci sklapanja */
+      
       <section className="bg-[#0f1619] rounded-[14px] p-7">
         <div className="flex items-center gap-3 mb-5">
           <Cpu className="w-5 h-5 text-[#21bfa3]" />
@@ -903,7 +943,7 @@ export default function ProjectForm({
           </button>
         </div>
       </section>
-      /* sliak spajanja */
+      
       <section className="bg-[#0f1619] rounded-[14px] p-7">
         <div className="flex items-center gap-3 mb-2">
           <Cable className="w-5 h-5 text-[#21bfa3]" />
@@ -1038,8 +1078,33 @@ export default function ProjectForm({
               />
             </div>
 
-            {project.codeFiles.length > 0 && (
+            {(project.existingCodeFiles.length > 0 ||
+              project.codeFiles.length > 0) && (
               <ul className="space-y-2 mt-3">
+                {project.existingCodeFiles.map((f) => (
+                  <li
+                    key={f.id}
+                    className="flex items-center justify-between bg-[#12181b] p-3 rounded-md"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileCode className="w-4 h-4 text-[#21bfa3]" />
+                      <div>
+                        <p className="text-sm text-white">{f.name}</p>
+                        <p className="text-xs text-[#97a3a9]">
+                          {formatFileSize(f.size)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeExistingFile(f)}
+                      className="text-red-400 hover:text-red-300"
+                      aria-label={`Remove ${f.name}`}
+                    >
+                      <Trash2 className="w-4 h-4 cursor-pointer" />
+                    </button>
+                  </li>
+                ))}
                 {project.codeFiles.map((f) => (
                   <li
                     key={f.id}
@@ -1110,8 +1175,33 @@ export default function ProjectForm({
           />
         </div>
 
-        {project.miscFiles.length > 0 && (
+        {(project.existingMiscFiles.length > 0 ||
+          project.miscFiles.length > 0) && (
           <ul className="space-y-2">
+            {project.existingMiscFiles.map((f) => (
+              <li
+                key={f.id}
+                className="flex items-center justify-between bg-[#12181b] p-3 rounded-md"
+              >
+                <div className="flex items-center gap-3">
+                  <Box className="w-4 h-4 text-[#21bfa3]" />
+                  <div>
+                    <p className="text-sm text-white">{f.name}</p>
+                    <p className="text-xs text-[#97a3a9]">
+                      {formatFileSize(f.size)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  title="delete"
+                  type="button"
+                  onClick={() => removeExistingFile(f)}
+                  className="text-red-400 hover:text-red-300"
+                >
+                  <Trash2 className="w-4 h-4 cursor-pointer" />
+                </button>
+              </li>
+            ))}
             {project.miscFiles.map((f) => (
               <li
                 key={f.id}

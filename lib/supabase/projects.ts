@@ -1,5 +1,9 @@
 import { createClient } from "./client";
-import { uploadProjectFile, deleteProjectFiles } from "./storage";
+import {
+  uploadProjectFile,
+  deleteProjectFiles,
+  deleteProjectFileByUrl,
+} from "./storage";
 
 interface StepInput {
   title: string;
@@ -19,6 +23,12 @@ interface FileInput {
   file: File;
   name: string;
   size: number;
+}
+
+interface RemovedFileInput {
+  id: string;
+  url: string;
+  type: "code" | "misc";
 }
 
 interface ProjectInput {
@@ -245,6 +255,7 @@ export async function updateProject(
   options?: {
     existingCoverImageUrl?: string | null;
     existingWiringDiagramUrl?: string | null;
+    removedFiles?: RemovedFileInput[];
   },
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
@@ -325,6 +336,22 @@ export async function updateProject(
     );
     if (stepsToInsert.length > 0) {
       await supabase.from("project_steps").insert(stepsToInsert);
+    }
+
+    const removedFiles = options?.removedFiles ?? [];
+    if (removedFiles.length > 0) {
+      await supabase
+        .from("project_files")
+        .delete()
+        .in(
+          "id",
+          removedFiles.map((file) => file.id),
+        );
+
+      for (const file of removedFiles) {
+        const bucket = file.type === "code" ? "code_files" : "misc_files";
+        await deleteProjectFileByUrl(bucket, file.url);
+      }
     }
 
     // nove kod datoteke

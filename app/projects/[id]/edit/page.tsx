@@ -23,7 +23,8 @@ export default async function EditProjectPage({
 
   if (!project) notFound();
 
-  const [{ data: components }, { data: steps }] = await Promise.all([
+  const [{ data: components }, { data: steps }, { data: files }] =
+    await Promise.all([
     supabase
       .from("project_components")
       .select("name, quantity, cost, link")
@@ -32,7 +33,11 @@ export default async function EditProjectPage({
       .from("project_steps")
       .select("step_order, title, instructions, image_url")
       .eq("project_id", id),
-  ]);
+      supabase
+        .from("project_files")
+        .select("id, file_url, file_name, file_size, file_type")
+        .eq("project_id", id),
+    ]);
 
   return (
     <>
@@ -67,6 +72,24 @@ export default async function EditProjectPage({
                 imageUrl: s.image_url,
                 image: null,
               })),
+              existingCodeFiles: (files ?? [])
+                .filter((f) => f.file_type === "code")
+                .map((f) => ({
+                  id: f.id,
+                  url: f.file_url,
+                  name: f.file_name ?? "Code file",
+                  size: f.file_size ?? 0,
+                  type: "code" as const,
+                })),
+              existingMiscFiles: (files ?? [])
+                .filter((f) => f.file_type === "misc")
+                .map((f) => ({
+                  id: f.id,
+                  url: f.file_url,
+                  name: f.file_name ?? "File",
+                  size: f.file_size ?? 0,
+                  type: "misc" as const,
+                })),
             }}
           />
         </div>
