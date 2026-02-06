@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ProjectCard } from "@/components/ProjectCard";
+import { FundraisingCard } from "@/components/FundraisingCard";
 
 export default async function FundraisingPage() {
   const supabase = await createClient();
@@ -13,7 +13,7 @@ export default async function FundraisingPage() {
   const { data: fundraising = [] } = await supabase
     .from("fundraising_projects")
     .select(
-      "id, project_name, short_description, long_description, amount_needed, donation_link, payment_info, image_urls, created_at",
+      "id, profile_id, project_name, short_description, long_description, amount_needed, donation_link, payment_info, image_urls, created_at",
     )
     .order("created_at", { ascending: false });
   const fundraisingList = fundraising ?? [];
@@ -56,18 +56,15 @@ export default async function FundraisingPage() {
                       ? f.image_urls[0]
                       : null;
                   return (
-                    <ProjectCard
+                    <FundraisingCard
                       key={f.id}
-                      href={`/fundraising/${f.id}`}
-                      showMenu={false}
+                      fundraisingId={f.id}
                       title={f.project_name}
                       description={f.short_description}
                       coverImageUrl={image}
-                    >
-                      <div className="mt-2 bg-white/10 text-accent font-bold text-sm px-4 py-1 rounded-full border border-white/15">
-                        ${Number(f.amount_needed || 0).toFixed(2)}
-                      </div>
-                    </ProjectCard>
+                      amountNeeded={f.amount_needed}
+                      isOwner={f.profile_id === data.user.id}
+                    />
                   );
                 })}
               </div>

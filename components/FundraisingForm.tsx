@@ -3,19 +3,41 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { updateFundraisingProject } from "@/lib/supabase/fundraising";
+import { Trash2 } from "lucide-react";
 
-export function FundraisingForm() {
+interface FundraisingFormProps {
+  fundraisingId?: string;
+  initialData?: {
+    projectName: string;
+    shortDescription: string;
+    longDescription: string;
+    amountNeeded: string;
+    paymentInfo: string;
+    donationLink: string;
+    imageUrls: string[];
+  };
+}
+
+export function FundraisingForm({
+  fundraisingId,
+  initialData,
+}: FundraisingFormProps = {}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    projectName: "",
-    shortDescription: "",
-    longDescription: "",
-    amountNeeded: "",
-    paymentInfo: "",
-    donationLink: "",
+    projectName: initialData?.projectName ?? "",
+    shortDescription: initialData?.shortDescription ?? "",
+    longDescription: initialData?.longDescription ?? "",
+    amountNeeded: initialData?.amountNeeded ?? "",
+    paymentInfo: initialData?.paymentInfo ?? "",
+    donationLink: initialData?.donationLink ?? "",
   });
   const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>(
+    initialData?.imageUrls ?? [],
+  );
+  const [removedImages, setRemovedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (
@@ -77,36 +99,61 @@ export function FundraisingForm() {
         return;
       }
 
-      const { data: inserted, error } = await supabase
-        .from("fundraising_projects")
-        .insert({
-          profile_id: user.id,
-          project_name: form.projectName,
-          short_description: form.shortDescription,
-          long_description: form.longDescription,
-          amount_needed: Number(form.amountNeeded),
-          payment_info: form.paymentInfo,
-          donation_link: form.donationLink || null,
-        })
-        .select("id")
-        .single();
+      if (fundraisingId) {
+        // ažuriraj postojeći
+        const result = await updateFundraisingProject(
+          fundraisingId,
+          {
+            projectName: form.projectName,
+            shortDescription: form.shortDescription,
+            longDescription: form.longDescription,
+            amountNeeded: Number(form.amountNeeded),
+            paymentInfo: form.paymentInfo,
+            donationLink: form.donationLink,
+          },
+          images,
+          existingImages,
+          removedImages,
+        );
 
-      if (error) throw error;
+        if (result.success) {
+          router.push(`/fundraising/${fundraisingId}`);
+        } else {
+          alert(result.error || "Update failed.");
+        }
+      } else {
+        // kreiraj novi
+        const { data: inserted, error } = await supabase
+          .from("fundraising_projects")
+          .insert({
+            profile_id: user.id,
+            project_name: form.projectName,
+            short_description: form.shortDescription,
+            long_description: form.longDescription,
+            amount_needed: Number(form.amountNeeded),
+            payment_info: form.paymentInfo,
+            donation_link: form.donationLink || null,
+          })
+          .select("id")
+          .single();
 
-      if (inserted?.id && images.length > 0) {
-        await uploadImages(supabase, inserted.id);
+        if (error) throw error;
+
+        if (inserted?.id && images.length > 0) {
+          await uploadImages(supabase, inserted.id);
+        }
+
+        setForm({
+          projectName: "",
+          shortDescription: "",
+          longDescription: "",
+          amountNeeded: "",
+          paymentInfo: "",
+          donationLink: "",
+        });
+        setImages([]);
+        router.push("/fundraising");
       }
-
-      setForm({
-        projectName: "",
-        shortDescription: "",
-        longDescription: "",
-        amountNeeded: "",
-        paymentInfo: "",
-        donationLink: "",
-      });
-      setImages([]);
-      router.push("/fundraising");
     } catch (err) {
       console.error(err);
       alert("Failed to submit. Check console for details.");
@@ -227,13 +274,52 @@ export function FundraisingForm() {
               {images.map((img, idx) => (
                 <div
                   key={`${img.name}-${idx}`}
-                  className="w-24 h-24 rounded-md overflow-hidden border border-white/10"
+                  className="relative w-24 h-24 rounded-md overflow-hidden border border-white/10"
                 >
                   <img
                     src={URL.createObjectURL(img)}
                     alt={img.name}
                     className="w-full h-full object-cover"
                   />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImages((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                    className="absolute top-1 right-1 bg-red-500/90 text-white p-1 rounded-full hover:bg-red-500"
+                    aria-label="Remove image"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {existingImages.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {existingImages.map((url, idx) => (
+                <div
+                  key={url}
+                  className="relative w-24 h-24 rounded-md overflow-hidden border border-white/10"
+                >
+                  <img
+                    src={url}
+                    alt={`Existing ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExistingImages((prev) =>
+                        prev.filter((u) => u !== url),
+                      );
+                      setRemovedImages((prev) => [...prev, url]);
+                    }}
+                    className="absolute top-1 right-1 bg-red-500/90 text-white p-1 rounded-full hover:bg-red-500"
+                    aria-label="Remove existing image"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -249,7 +335,7 @@ export function FundraisingForm() {
               : "bg-[#23d18b] hover:bg-[#23d18b]/90 cursor-pointer"
           }`}
         >
-          {loading ? "Submitting..." : "Submit request"}
+          {loading ? "Submitting..." : fundraisingId ? "Update" : "Submit request"}
         </button>
       </form>
     </div>

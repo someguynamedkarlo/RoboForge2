@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Users,
   FolderOpen,
+  Heart,
 } from "lucide-react";
 
 interface Project {
@@ -21,6 +22,17 @@ interface Project {
   cover_image_url: string | null;
   total_cost: number | null;
   published: boolean;
+  created_at: string;
+  profile_id: string;
+  profiles: { full_name: string | null; email: string | null } | null;
+}
+
+interface FundraisingProject {
+  id: string;
+  project_name: string;
+  short_description: string | null;
+  amount_needed: number | null;
+  image_urls: string[] | null;
   created_at: string;
   profile_id: string;
   profiles: { full_name: string | null; email: string | null } | null;
@@ -38,12 +50,16 @@ interface UserProfile {
 export default function AdminDashboard() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [fundraising, setFundraising] = useState<FundraisingProject[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingFundId, setDeletingFundId] = useState<string | null>(null);
   const [banningId, setBanningId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"projects" | "users">("projects");
+  const [activeTab, setActiveTab] = useState<
+    "projects" | "fundraising" | "users"
+  >("projects");
 
   useEffect(() => {
     checkAdminAndLoad();
@@ -73,7 +89,7 @@ export default function AdminDashboard() {
     }
 
     setAuthorized(true);
-    await Promise.all([loadProjects(), loadUsers()]);
+    await Promise.all([loadProjects(), loadFundraising(), loadUsers()]);
     setLoading(false);
   }
 
@@ -91,6 +107,72 @@ export default function AdminDashboard() {
     }
     if (data) {
       setProjects(data as unknown as Project[]);
+    }
+  }
+
+  async function loadFundraising() {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("fundraising_projects")
+      .select(
+        "id, project_name, short_description, amount_needed, image_urls, created_at, profile_id, profiles(full_name, email)",
+      )
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Admin load fundraising error:", error);
+    }
+    if (data) {
+      setFundraising(data as unknown as FundraisingProject[]);
+    }
+  }
+
+  async function handleDeleteFundraising(id: string) {
+    if (!confirm("Are you sure you want to delete this fundraising project?"))
+      return;
+    setDeletingFundId(id);
+
+    try {
+      const supabase = createClient();
+
+      // obriši slike iz storage-a
+      const { data: project } = await supabase
+        .from("fundraising_projects")
+        .select("image_urls")
+        .eq("id", id)
+        .single();
+
+      if (project?.image_urls && Array.isArray(project.image_urls)) {
+        const prefix = "/storage/v1/object/public/images/";
+        const paths = project.image_urls
+          .map((url: string) => {
+            const idx = url.indexOf(prefix);
+            if (idx !== -1)
+              return url.slice(idx + prefix.length).split("?")[0];
+            return null;
+          })
+          .filter(Boolean) as string[];
+
+        if (paths.length > 0) {
+          await supabase.storage.from("images").remove(paths);
+        }
+      }
+
+      const { error } = await supabase
+        .from("fundraising_projects")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        alert("Delete failed: " + error.message);
+      } else {
+        setFundraising((prev) => prev.filter((f) => f.id !== id));
+      }
+    } catch (err) {
+      console.error("Admin delete fundraising error:", err);
+      alert("Something went wrong.");
+    } finally {
+      setDeletingFundId(null);
     }
   }
 
@@ -240,6 +322,17 @@ export default function AdminDashboard() {
               Projects ({projects.length})
             </button>
             <button
+              onClick={() => setActiveTab("fundraising")}
+              className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "fundraising"
+                  ? "border-accent text-accent"
+                  : "border-transparent text-gray-400 hover:text-white"
+              }`}
+            >
+              <Heart className="w-4 h-4" />
+              Fundraising ({fundraising.length})
+            </button>
+            <button
               onClick={() => setActiveTab("users")}
               className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === "users"
@@ -352,6 +445,118 @@ export default function AdminDashboard() {
                                   disabled={deletingId === project.id}
                                   className="p-2 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
                                   title="Delete project"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Fundraising tab */}
+          {activeTab === "fundraising" && (
+            <>
+              {fundraising.length === 0 ? (
+                <p className="text-gray-400">No fundraising projects found.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-white/10">
+                      <tr className="text-gray-400 text-xs uppercase">
+                        <th className="pb-3 pr-4">Image</th>
+                        <th className="pb-3 pr-4">Name</th>
+                        <th className="pb-3 pr-4">Author</th>
+                        <th className="pb-3 pr-4">Amount</th>
+                        <th className="pb-3 pr-4">Created</th>
+                        <th className="pb-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {fundraising.map((f) => {
+                        const profile = Array.isArray(f.profiles)
+                          ? f.profiles[0]
+                          : f.profiles;
+                        const image =
+                          Array.isArray(f.image_urls) &&
+                          f.image_urls.length > 0
+                            ? f.image_urls[0]
+                            : null;
+                        return (
+                          <tr key={f.id} className="hover:bg-white/5">
+                            <td className="py-3 pr-4">
+                              {image ? (
+                                <img
+                                  src={image}
+                                  alt=""
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center text-xs text-gray-500">
+                                  —
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 pr-4">
+                              <p className="font-medium text-white line-clamp-1">
+                                {f.project_name}
+                              </p>
+                              {f.short_description && (
+                                <p className="text-xs text-gray-400 line-clamp-1">
+                                  {f.short_description}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 pr-4 text-gray-300">
+                              {profile?.full_name ||
+                                profile?.email ||
+                                "Unknown"}
+                            </td>
+                            <td className="py-3 pr-4 text-gray-300">
+                              {f.amount_needed != null
+                                ? `$${f.amount_needed.toFixed(2)}`
+                                : "—"}
+                            </td>
+                            <td className="py-3 pr-4 text-gray-400 text-xs">
+                              {new Date(
+                                f.created_at,
+                              ).toLocaleDateString()}
+                            </td>
+                            <td className="py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() =>
+                                    router.push(`/fundraising/${f.id}`)
+                                  }
+                                  className="p-2 text-gray-400 hover:text-white transition-colors"
+                                  title="View fundraising"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    router.push(
+                                      `/fundraising/${f.id}/edit`,
+                                    )
+                                  }
+                                  className="p-2 text-gray-400 hover:text-accent transition-colors"
+                                  title="Edit fundraising"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteFundraising(f.id)
+                                  }
+                                  disabled={deletingFundId === f.id}
+                                  className="p-2 text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                                  title="Delete fundraising"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
