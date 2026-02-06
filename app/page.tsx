@@ -11,7 +11,7 @@ export default async function Home() {
   if (data.user != null) redirect("/home");
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row items-center md:items-start justify-center md:justify-start gap-8 sm:gap-12 lg:gap-20 px-6 py-12">
+    <div className="flex min-h-screen flex-col md:flex-row items-center justify-center gap-8 sm:gap-12 lg:gap-20 px-6 py-12">
       <div className="flex flex-col text-center md:text-left font-bold md:ml-6 lg:ml-16 xl:ml-24 max-w-3xl">
         <h1 className="font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-glow-accent text-accent">
           RoboForge
@@ -25,7 +25,7 @@ export default async function Home() {
           your robotics projects
         </h2>
       </div>
-      <div className="w-full md:w-auto flex justify-center md:justify-start">
+      <div className="w-full md:w-auto flex justify-center">
         <AuthButton />
       </div>
     </div>

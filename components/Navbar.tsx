@@ -16,11 +16,11 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center justify-center">
-          <ul className="font-medium flex flex-row p-0 space-x-8 lg:space-x-16 rtl:space-x-reverse bg-neutral-primary">
+          <ul className="font-medium flex flex-row p-0 space-x-6 lg:space-x-10 rtl:space-x-reverse bg-neutral-primary">
             <li>
               <Link
                 href="/"
-                className="block my-4 mx-4 lg:mx-12 xl:mx-25 text-white text-lg lg:text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
+                className="block my-4 mx-3 lg:mx-6 xl:mx-8 text-white text-lg lg:text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
               >
                 Home
               </Link>
@@ -28,7 +28,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/my-projects"
-                className="block my-4 mx-4 lg:mx-12 xl:mx-25 text-white text-lg lg:text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
+                className="block my-4 mx-3 lg:mx-6 xl:mx-8 text-white text-lg lg:text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
               >
                 My projects
               </Link>
@@ -36,7 +36,7 @@ export default function Navbar() {
             <li>
               <Link
                 href="/fundraising"
-                className="block my-4 mx-4 lg:mx-12 xl:mx-25 text-white text-lg lg:text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
+                className="block my-4 mx-3 lg:mx-6 xl:mx-8 text-white text-lg lg:text-2xl text-glow-white hover:text-accent hover:text-glow-accent transition-all duration-300"
               >
                 Fundraising
               </Link>
