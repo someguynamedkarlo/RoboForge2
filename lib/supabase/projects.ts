@@ -31,6 +31,7 @@ interface ProjectInput {
   logicExplanation: string;
   codeFiles: FileInput[];
   miscFiles: FileInput[];
+  videoUrl: string;
 }
 
 // objavi novi projekt
@@ -55,6 +56,7 @@ export async function publishProject(
         logic_explanation: data.logicExplanation,
         total_cost: totalCost,
         published: true,
+        video_url: data.videoUrl?.trim() || null,
       })
       .select("id")
       .single();
@@ -280,6 +282,7 @@ export async function updateProject(
         total_cost: totalCost,
         cover_image_url: coverImageUrl,
         wiring_diagram_url: wiringDiagramUrl,
+        video_url: data.videoUrl?.trim() || null,
       })
       .eq("id", projectId);
 

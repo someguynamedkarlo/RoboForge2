@@ -14,6 +14,7 @@ import {
   Cable,
   Package,
   Box,
+  Video,
 } from "lucide-react";
 
 interface Step {
@@ -58,6 +59,7 @@ interface ProjectState {
   logicExplanation: string;
   codeFiles: CodeFile[];
   miscFiles: MiscFile[];
+  videoUrl: string;
 }
 
 function DropZone({
@@ -157,6 +159,7 @@ interface ProjectFormProps {
     coverImageUrl: string | null;
     wiringDiagramUrl: string | null;
     logicExplanation: string;
+    videoUrl: string;
     components: Component[];
     steps: Array<Omit<Step, "id" | "image"> & { image: null }>;
   };
@@ -214,6 +217,7 @@ export default function ProjectForm({
         logicExplanation: initialData.logicExplanation ?? "",
         codeFiles: [],
         miscFiles: [],
+        videoUrl: initialData.videoUrl ?? "",
       };
     }
     return {
@@ -238,6 +242,7 @@ export default function ProjectForm({
       logicExplanation: "",
       codeFiles: [],
       miscFiles: [],
+      videoUrl: "",
     };
   });
   const [isPublishing, setIsPublishing] = useState(false);
@@ -350,6 +355,7 @@ export default function ProjectForm({
         logicExplanation: project.logicExplanation,
         codeFiles: project.codeFiles,
         miscFiles: project.miscFiles,
+        videoUrl: project.videoUrl,
       };
 
       const result = projectId
@@ -606,6 +612,30 @@ export default function ProjectForm({
                 {errors.coverImage}
               </p>
             )}
+          </div>
+          <div>
+            <label
+              htmlFor="videoUrl"
+              className="block text-xs font-medium text-[#97a3a9] mb-2"
+            >
+              Video URL (optional)
+            </label>
+            <div className="flex items-center gap-3">
+              <Video className="w-5 h-5 text-[#21bfa3] shrink-0" />
+              <input
+                id="videoUrl"
+                type="url"
+                value={project.videoUrl}
+                onChange={(e) =>
+                  setProject((p) => ({ ...p, videoUrl: e.target.value }))
+                }
+                placeholder="https://www.youtube.com/watch?v=... or any video link"
+                className={inputClass}
+              />
+            </div>
+            <p className="text-xs text-[#97a3a9]/60 mt-1">
+              YouTube, Vimeo, or any direct video link
+            </p>
           </div>
         </div>
       </section>

@@ -1,48 +1,63 @@
-# RoboForge - Copilot Instructions
+# RoboForge — Copilot Instructions
 
-## Project Overview
+## What this project is
+A robotics-project sharing platform (Next.js latest + Tailwind v4 + Supabase). Users sign in via OAuth (Google/GitHub), then create/edit/delete robotics projects (with steps, components, wiring diagrams, code files) and fundraising campaigns. Deployed on Vercel.
 
-Next.js 16 app with Supabase authentication (email/password + OAuth via Google/GitHub). Deployed on Vercel with automatic CI/CD.
+## Architecture at a glance
+```
+app/             → Next.js App Router (all routes are Server Components unless marked "use client")
+components/      → Shared UI; server components (Navbar, profile, auth-button) and client components (ProjectForm, FundraisingForm, ProjectCard, mobile-nav, OAuth buttons, logout)
+lib/supabase/    → All Supabase client factories and data-access helpers
+  server.ts      → Server Component client (uses cookies())
+  client.ts      → Browser client (createBrowserClient)
+  proxy.ts       → Middleware session refresh (createServerClient per request)
+  projects.ts    → CRUD for projects (publishProject, updateProject, deleteProject, getUserProjects, getProjects)
+  storage.ts     → File upload/delete helpers for 3 buckets: images, code_files, misc_files
+  admin.ts       → isAdmin() server-side helper (queries `admins` table)
+proxy.ts         → Root middleware entrypoint → calls lib/supabase/proxy.updateSession
+sql/             → Manual migration snippets run against Supabase directly
+```
 
-# RoboForge - Copilot Instructions
+## Supabase tables (inferred from queries)
+- `projects` — main project record (`profile_id`, `title`, `short_description`, `logic_explanation`, `cover_image_url`, `wiring_diagram_url`, `video_url`, `total_cost`, `published`)
+- `project_steps` — ordered build steps per project (`project_id`, `step_order`, `title`, `instructions`, `image_url`)
+- `project_components` — BOM items (`project_id`, `name`, `quantity`, `cost`, `link`)
+- `project_files` — uploaded code/misc files (`project_id`, `file_url`, `file_name`, `file_size`, `file_type: "code"|"misc"`)
+- `fundraising_projects` — funding campaigns (`profile_id`, `project_name`, `short_description`, `long_description`, `amount_needed`, `payment_info`, `donation_link`, `image_urls`)
+- `profiles` — user profiles joined via `profile_id` (has `username`, `full_name`, `avatar_url`, `role`). Set `role = 'admin'` to grant admin access.
 
-## Overview
-- Next.js 16 + Tailwind app with Supabase auth (OAuth Google/GitHub). Deployed on Vercel.
-- No tests yet; lint/build via npm scripts. README is placeholder.
+Storage buckets: `images`, `code_files`, `misc_files`. Path convention: `{projectId}/{uuid}.{ext}`.
 
 ## Auth flow
-- Supabase clients live in `lib/supabase/`: `server.ts` for Server Components (uses `cookies()`), `client.ts` for Client Components, `proxy.ts` for middleware refresh.
-- OAuth callback + email OTP handled in `app/auth/confirm/route.ts` (`GET` only). It exchanges `code` for a session or verifies `token_hash`/`type`, then redirects (defaults to `/home`).
-- Middleware entrypoint `proxy.ts` calls `updateSession` (lib/supabase/proxy) to refresh JWT cookies and redirect unauthenticated users; current redirect target is `/auth/login` (route missing right now—adjust if you add a login page).
-- Server-side checks typically use `supabase.auth.getUser()`; client-side uses `createClient()` from `lib/supabase/client`.
-
-## Routing / pages
-- `app/layout.tsx`: sets metadata, Geist font, ThemeProvider, and `suppressHydrationWarning` on html/body.
-- `app/page.tsx`: landing. Creates server client, redirects to `/home` if authenticated, otherwise renders `AuthButton` (OAuth buttons) only.
-- `app/home/page.tsx`: currently just renders `Navbar`; was intended as protected area. `UserDetails` helper redirects to `/` on auth failure but is unused.
-- `app/auth/error/page.tsx`: simple error message.
-
-## Components
-- `components/google-sign.tsx` and `components/github-sign.tsx`: client OAuth triggers with `redirectTo: ${window.location.origin}/auth/confirm`. Use `startTransition` to avoid blocking UI.
-- `components/logout-button.tsx`: client sign-out then `router.push("/")`.
-- `components/Navbar.tsx` + `components/profile.tsx`: server components showing nav links and avatar + logout.
-- `components/ui/button.tsx`: shadcn button variant utility using `cn` from `lib/utils`.
-
-## Middleware details
-- `lib/supabase/proxy.ts` creates a server client per request (never global). Uses `hasEnvVars` guard to no-op when envs missing. After `getClaims`, redirects to `/auth/login` unless path is `/`, `/login`, or `/auth/*`. Copy cookies from `supabaseResponse` if you craft a custom response.
+1. Landing (`app/page.tsx`): unauthenticated users see OAuth buttons; authenticated users redirect to `/home`.
+2. OAuth buttons (`components/google-sign.tsx`, `github-sign.tsx`): call `supabase.auth.signInWithOAuth` with `redirectTo: ${window.location.origin}/auth/confirm`.
+3. Callback (`app/auth/confirm/route.ts`): exchanges `code` for session or verifies email OTP `token_hash`, then checks `profiles.role` — admins redirect to `/admin`, others to `/home`.
+4. Middleware (`proxy.ts` → `lib/supabase/proxy.ts`): refreshes JWT cookies via `getClaims()`; redirects unauthenticated users to `/auth/login` (route does not exist yet — landing page handles login today).
+5. Protected pages check auth with `supabase.auth.getUser()` and `redirect("/")` on failure.
+6. Admin dashboard (`app/admin/page.tsx`): client component that queries `admins` table on mount; non-admins are redirected to `/home`.
 
 ## Commands
-- `npm run dev` (dev server), `npm run build`, `npm run lint`.
+- `npm run dev` — dev server (Turbopack)
+- `npm run build` / `npm run lint` — build & lint
+- No test framework is set up yet.
 
-## Conventions / pitfalls
-- Always create Supabase clients per request/render (Fluid compute safe).
-- Keep OAuth `redirectTo` relative to `window.location.origin` for both localhost and Vercel.
-- Avoid `export const dynamic` in route handlers (Turbopack issue noted). Route handlers stay static.
-- Ensure `suppressHydrationWarning` remains on html/body to dodge extension noise.
-- Env vars required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (set in Vercel and local).
+## Key conventions
+- **Never store Supabase clients globally.** Always create per-request (`await createClient()` server-side) or per-render (`createClient()` client-side). This is required for Fluid compute safety.
+- **Server vs Client split:** pages that only fetch + render are async Server Components importing from `lib/supabase/server`. Interactive forms/cards are `"use client"` and import from `lib/supabase/client`.
+- **Data-access layer lives in `lib/supabase/projects.ts`** (client-side helper used from Client Components). Fundraising writes happen inline in `FundraisingForm.tsx` — there's no separate data-access file for fundraising yet.
+- **shadcn/ui (new-york style):** UI primitives in `components/ui/`. Add new ones via `npx shadcn@latest add <component>`. Uses `cn()` from `lib/utils`.
+- **Icons:** Lucide React (`lucide-react`).
+- **Theming:** CSS variables in `app/globals.css` (`--background`, `--accent`, `--primary`, `--secondary`). Custom `@utility` classes for glow effects (`text-glow-accent`, `box-glow-primary`). Dark-only design; `next-themes` ThemeProvider wraps the app but default theme is system.
+- **Dynamic route params** are `Promise<{ id: string }>` (Next.js 15+ convention): always `await params` before use.
+- **Keep `suppressHydrationWarning`** on `<html>` and `<body>` in `app/layout.tsx`.
+- **OAuth `redirectTo`** must use `window.location.origin` to work on both localhost and Vercel.
+- **Inline Croatian comments** appear throughout the codebase (e.g. `// uzmi sve projekte`). Preserve them when editing existing code.
 
-## Gaps to know
-- Middleware redirects to `/auth/login`, but that route/page does not exist; landing page handles sign-in today. Update matcher/redirect if you add a login page.
-- README is empty; rely on this file for project guidance for now.
+## Env vars (required)
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — set in `.env.local` and Vercel dashboard.
 
-components/
+## Known gaps
+- Middleware redirects to `/auth/login` but that page doesn't exist; sign-in is on the landing page (`/`).
+- No test suite, no CI beyond Vercel build.
+- SQL migrations in `sql/` are manual snippets — no migration tool.
+- No separate data-access module for fundraising; writes happen directly in `FundraisingForm`.

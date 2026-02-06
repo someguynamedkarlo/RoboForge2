@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/supabase/admin";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
@@ -16,6 +17,23 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        if (profile?.role === "banned") {
+          redirect("/banned");
+        }
+        // provjeri je li admin
+        if (await isAdmin(user.id)) {
+          redirect("/admin");
+        }
+      }
       redirect(next);
     } else {
       redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);
@@ -29,6 +47,23 @@ export async function GET(request: NextRequest) {
       token_hash,
     });
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        if (profile?.role === "banned") {
+          redirect("/banned");
+        }
+        // provjeri je li admin
+        if (await isAdmin(user.id)) {
+          redirect("/admin");
+        }
+      }
       redirect(next);
     } else {
       redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);

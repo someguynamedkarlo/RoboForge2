@@ -53,10 +53,35 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // no user, redirect to landing page (login lives on "/")
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  // provjeri je li korisnik baniran
+  if (
+    user &&
+    !request.nextUrl.pathname.startsWith("/banned") &&
+    !request.nextUrl.pathname.startsWith("/auth")
+  ) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.sub)
+      .single();
+
+    if (profile?.role === "banned") {
+      // odjavi korisnika i preusmjeri na banned stranicu
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/banned";
+      const bannedResponse = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        bannedResponse.cookies.set(cookie.name, cookie.value);
+      });
+      return bannedResponse;
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

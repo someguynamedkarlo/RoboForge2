@@ -16,7 +16,7 @@ export default async function EditProjectPage({
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, title, short_description, logic_explanation, cover_image_url, wiring_diagram_url",
+      "id, title, short_description, logic_explanation, cover_image_url, wiring_diagram_url, video_url",
     )
     .eq("id", id)
     .single();
@@ -53,6 +53,7 @@ export default async function EditProjectPage({
               coverImageUrl: project.cover_image_url,
               wiringDiagramUrl: project.wiring_diagram_url,
               logicExplanation: project.logic_explanation ?? "",
+              videoUrl: project.video_url ?? "",
               components: (components ?? []).map((c) => ({
                 id: crypto.randomUUID(),
                 name: c.name,

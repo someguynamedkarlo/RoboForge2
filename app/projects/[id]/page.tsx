@@ -2,6 +2,32 @@ import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { createClient } from "@/lib/supabase/server";
 
+function getEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    // YouTube: youtube.com/watch?v=ID or youtu.be/ID
+    if (
+      parsed.hostname.includes("youtube.com") ||
+      parsed.hostname.includes("www.youtube.com")
+    ) {
+      const id = parsed.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+    if (parsed.hostname === "youtu.be") {
+      const id = parsed.pathname.slice(1);
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+    // Vimeo: vimeo.com/ID
+    if (parsed.hostname.includes("vimeo.com")) {
+      const id = parsed.pathname.split("/").filter(Boolean).pop();
+      if (id && /^\d+$/.test(id)) return `https://player.vimeo.com/video/${id}`;
+    }
+  } catch {
+    // nevažeći URL
+  }
+  return null;
+}
+
 export default async function ProjectPage({
   params,
 }: {
@@ -15,7 +41,7 @@ export default async function ProjectPage({
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select(
-      "id, title, short_description, logic_explanation, cover_image_url, wiring_diagram_url, total_cost, created_at, profiles(id, full_name, avatar_url)",
+      "id, title, short_description, logic_explanation, cover_image_url, wiring_diagram_url, video_url, total_cost, created_at, profiles(id, full_name, avatar_url)",
     )
     .eq("id", id)
     .single();
@@ -149,6 +175,32 @@ export default async function ProjectPage({
                       alt="Wiring diagram"
                       className="rounded-lg border border-white/10 max-w-xl w-full object-contain"
                     />
+                  )}
+                </section>
+              )}
+
+              {project.video_url && (
+                <section className="space-y-3">
+                  <h2 className="text-2xl font-semibold">Video</h2>
+                  {getEmbedUrl(project.video_url) ? (
+                    <div className="aspect-video w-full max-w-2xl rounded-lg overflow-hidden border border-white/10">
+                      <iframe
+                        src={getEmbedUrl(project.video_url)!}
+                        title="Project video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <a
+                      href={project.video_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent underline"
+                    >
+                      Watch video ↗
+                    </a>
                   )}
                 </section>
               )}
